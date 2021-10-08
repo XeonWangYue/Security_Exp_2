@@ -1,0 +1,24 @@
+syntax = "proto3";
+option optimize_for = SPEED;
+option java_outer_classname = "MsgVO";
+option java_package = "top.xeonwang";
+message Msg{
+  enum DataType{
+    ValueType = 0;
+    KeyType = 1;
+  }
+
+  DataType data_type = 1;
+  oneof dataBody{
+    Value value = 2;
+    Key key = 3;
+  }
+}
+message Value{
+  int32 id = 1;
+  string name = 2;
+}
+message Key{
+  int32 id = 1;
+  int32 age = 2;
+}

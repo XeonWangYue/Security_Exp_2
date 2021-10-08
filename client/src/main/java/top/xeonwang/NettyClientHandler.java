@@ -1,31 +1,17 @@
 package top.xeonwang;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.util.CharsetUtil;
+
+import io.netty.channel.SimpleChannelInboundHandler;
+
 
 /**
  * @author Chen Q.
  */
-public class NettyClientHandler extends ChannelInboundHandlerAdapter {
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("client "+ ctx);
-        ctx.writeAndFlush(Unpooled.copiedBuffer("hello, server", CharsetUtil.UTF_8));
-    }
+public class NettyClientHandler extends SimpleChannelInboundHandler<MsgProtocol> {
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        ByteBuf buf = (ByteBuf) msg;
-        System.out.println("Server: "+buf.toString(CharsetUtil.UTF_8));
-        System.out.println("Server ip: "+ctx.channel().remoteAddress());
-    }
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext, MsgProtocol s) throws Exception {
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        cause.printStackTrace();
-        ctx.close();
     }
 }
