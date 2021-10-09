@@ -25,18 +25,7 @@ public class NettyServer {
                 .channel(NioServerSocketChannel.class)
                 .option(ChannelOption.SO_BACKLOG, 128)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
-                .childHandler(new ChannelInitializer<SocketChannel>() {
-
-                    @Override
-                    protected void initChannel(SocketChannel socketChannel) throws Exception {
-                        ChannelPipeline pipeline = socketChannel.pipeline();
-//                        pipeline.addLast("decoder", new StringDecoder());
-//                        pipeline.addLast("encoder", new StringEncoder());
-                        pipeline.addLast("decoder", new MessageDecoder());
-                        pipeline.addLast("encoder", new MessageEncoder());
-                        pipeline.addLast(new NettyServerHandler());
-                    }
-                });
+                .childHandler(new NettyServerInitializer());
         System.out.println("netty 服务启动");
         ChannelFuture cf = null;
         try {

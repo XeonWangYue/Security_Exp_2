@@ -11,6 +11,7 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 
 /**
@@ -46,7 +47,8 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<MsgProtocol>
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, MsgProtocol msg) throws Exception {
         Channel channel = channelHandlerContext.channel();
-
+        String s = new String(msg.getContent(), StandardCharsets.UTF_8);
+        System.out.println(s);
     }
 
     @Override

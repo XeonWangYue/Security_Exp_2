@@ -10,6 +10,7 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.util.CharsetUtil;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 /**
@@ -35,11 +36,16 @@ public class NettyClient {
         try {
             cf = bootstrap.connect(ip, port).sync();
             Channel channel = cf.channel();
+
+            MsgProtocol msgProtocol = new MsgProtocol();
+
+
             Scanner sc = new Scanner(System.in);
             while (sc.hasNextLine()) {
-                String msg = sc.nextLine();
-                channel.writeAndFlush(msg + "\r\n");
+                String line = sc.nextLine();
+                ClientCommand.excute(line, channel);
             }
+
         } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {
@@ -48,6 +54,19 @@ public class NettyClient {
     }
 
     public static void main(String[] args) {
-        new NettyClient("127.0.0.1", 8099).run();
+        String ip = null;
+        int port;
+        if (args.length > 1) {
+            ip = args[0];
+        } else {
+            ip = "127.0.0.1";
+        }
+        if (args.length > 2) {
+            port = Integer.valueOf(args[1]);
+        }
+        else{
+            port = 8099;
+        }
+        new NettyClient(ip, port).run();
     }
 }
