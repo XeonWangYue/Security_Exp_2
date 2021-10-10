@@ -1,5 +1,7 @@
 package top.xeonwang;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.crypto.Cipher;
@@ -63,7 +65,7 @@ public class RSAUtil {
 
     public static byte[] encrypt(Key key, byte[] data) throws EncryptException {
         try {
-            Cipher cipher = Cipher.getInstance("RSA", new BouncyCastleProvider());
+            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding", new BouncyCastleProvider());
             cipher.init(Cipher.ENCRYPT_MODE, key);
             int blockSize = cipher.getBlockSize();
             int outputSize = cipher.getOutputSize(data.length);
@@ -87,17 +89,24 @@ public class RSAUtil {
 
     public static byte[] decrypt(Key key, byte[] raw) throws EncryptException {
         try {
-            Cipher cipher = Cipher.getInstance("RSA", new BouncyCastleProvider());
+            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding", new org.bouncycastle.jce.provider.BouncyCastleProvider());
             cipher.init(Cipher.DECRYPT_MODE, key);
             int blockSize = cipher.getBlockSize();
-            ByteArrayOutputStream bout = new ByteArrayOutputStream(64);
+            ByteBuf buf = Unpooled.buffer();
+//            ByteArrayOutputStream bout = new ByteArrayOutputStream(64);
             int j = 0;
 
             while (raw.length - j * blockSize > 0) {
-                bout.write(cipher.doFinal(raw, j * blockSize, blockSize));
+                byte[] temp = cipher.doFinal(raw, j * blockSize, blockSize);
+                buf.writeBytes(temp);
+//                bout.write(cipher.doFinal(raw, j * blockSize, blockSize));
                 j++;
             }
-            return bout.toByteArray();
+//            return bout.toByteArray();
+
+            byte[] res = new byte[buf.readableBytes()];
+            buf.readBytes(res);
+            return res;
         } catch (Exception e) {
             throw new EncryptException(e.getMessage());
         }
