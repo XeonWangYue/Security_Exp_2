@@ -7,7 +7,17 @@ import lombok.Data;
  */
 @Data
 public class MsgProtocol {
-    int step;
-    int length;
-    byte[] content;
+    private int step;
+    private int length;
+    private byte[] content;
+
+    MsgProtocol() {
+
+    }
+
+    MsgProtocol(int step, byte[] content) {
+        this.step = step;
+        this.length = content.length;
+        this.content = content;
+    }
 }

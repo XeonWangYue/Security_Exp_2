@@ -13,8 +13,8 @@ public class Exp2ClientInitializer extends ChannelInitializer<SocketChannel> {
         ChannelPipeline pipeline = socketChannel.pipeline();
         pipeline.addLast("Decoder", new MessageDecoder());
         pipeline.addLast("Encoder", new MessageEncoder());
-//        pipeline.addLast("Executor", new CAClientHandler());
-        pipeline.addLast("Executor", new KDCClientHandler());
+        pipeline.addLast("Executor", new CAClientHandler());
+//        pipeline.addLast("Executor", new KDCClientHandler());
 
     }
 }

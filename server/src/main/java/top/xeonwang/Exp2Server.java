@@ -23,14 +23,13 @@ public class Exp2Server {
         bootstrap.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .option(ChannelOption.SO_BACKLOG, 128)
-                .option(ChannelOption.SO_SNDBUF, 1024 * 20)
-                .option(ChannelOption.SO_RCVBUF, 1024 * 20)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
                 .childHandler(new Exp2ServerInitializer());
         System.out.println("netty 服务启动");
         ChannelFuture cf = null;
         try {
             cf = bootstrap.bind(port).sync();
+
             cf.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             e.printStackTrace();

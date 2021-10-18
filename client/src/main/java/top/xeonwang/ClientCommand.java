@@ -102,6 +102,13 @@ public class ClientCommand {
                         end = t.lastIndexOf("\"");
                         message = t.substring(start, end);
                         mType = 2;
+                        break;
+                    case '4':
+                        serverType = 4;
+                        break;
+                    case '5':
+                        serverType = 5;
+                        break;
                     default:
                         break;
                 }
@@ -166,10 +173,46 @@ public class ClientCommand {
                 msg.setContent(content);
                 server.writeAndFlush(msg);
             }
-            if(mType == 1 && serverType == 3){
+            if (mType == 1 && serverType == 3) {
                 CAClientHandler.filename = file;
                 MsgProtocol msg = new MsgProtocol();
                 msg.setStep(10);
+                ByteBuf buf = Unpooled.buffer();
+                buf.writeInt(dist.getBytes(StandardCharsets.UTF_8).length)
+                        .writeBytes(dist.getBytes(StandardCharsets.UTF_8))
+                        .writeInt(CAClientHandler.ca.length)
+                        .writeBytes(CAClientHandler.ca)
+                        .writeInt(id.getBytes(StandardCharsets.UTF_8).length)
+                        .writeBytes(id.getBytes(StandardCharsets.UTF_8));
+                byte[] content = new byte[buf.readableBytes()];
+
+                msg.setLength(buf.readableBytes());
+                buf.readBytes(content);
+                msg.setContent(content);
+                server.writeAndFlush(msg);
+            }
+            if (mType == 1 && serverType == 4) {
+                CAClientHandler.filename = file;
+                MsgProtocol msg = new MsgProtocol();
+                msg.setStep(31);
+                ByteBuf buf = Unpooled.buffer();
+                buf.writeInt(dist.getBytes(StandardCharsets.UTF_8).length)
+                        .writeBytes(dist.getBytes(StandardCharsets.UTF_8))
+                        .writeInt(CAClientHandler.ca.length)
+                        .writeBytes(CAClientHandler.ca)
+                        .writeInt(id.getBytes(StandardCharsets.UTF_8).length)
+                        .writeBytes(id.getBytes(StandardCharsets.UTF_8));
+                byte[] content = new byte[buf.readableBytes()];
+
+                msg.setLength(buf.readableBytes());
+                buf.readBytes(content);
+                msg.setContent(content);
+                server.writeAndFlush(msg);
+            }
+            if (mType == 1 && serverType == 5) {
+                CAClientHandler.filename = file;
+                MsgProtocol msg = new MsgProtocol();
+                msg.setStep(21);
                 ByteBuf buf = Unpooled.buffer();
                 buf.writeInt(dist.getBytes(StandardCharsets.UTF_8).length)
                         .writeBytes(dist.getBytes(StandardCharsets.UTF_8))

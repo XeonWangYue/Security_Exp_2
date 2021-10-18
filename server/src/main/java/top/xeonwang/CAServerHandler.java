@@ -133,7 +133,12 @@ public class CAServerHandler extends SimpleChannelInboundHandler<MsgProtocol> {
             case 15:
             case 16:
             case 17:
-            {
+            case 21:
+            case 22:
+            case 23:
+            case 31:
+            case 32:
+            case 33: {
                 ByteBuf buf = Unpooled.buffer();
                 buf.writeBytes(msg.getContent());
 

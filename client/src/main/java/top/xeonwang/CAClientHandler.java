@@ -656,13 +656,500 @@ public class CAClientHandler extends SimpleChannelInboundHandler<MsgProtocol> {
                 System.out.println("start - end: " + (timeend - timestart));
                 FileOutputStream stream = new FileOutputStream("1.bmp");
                 FileInputStream stream1 = new FileInputStream("F:\\CodeCache\\is\\test_pic.bmp");
-                byte[] origin = stream1.readAllBytes();
+                stream.write(secret3);
+                stream.close();
+            }
+        }
+        if (msg.getStep() == 21) {
+            ByteBuf buf = Unpooled.buffer();
+            buf.writeBytes(msg.getContent());
 
-                for (int i = 0; i < secret3.length; i++) {
-                    if (secret3[i] != origin[i]) {
-                        System.out.print(i + " ");
+            int id2L = buf.readInt();
+            byte id2Byte[] = new byte[id2L];
+            buf.readBytes(id2Byte);
+
+            int cal = buf.readInt();
+            byte[] cas = new byte[cal];
+            buf.readBytes(cas);
+
+            int id1L = buf.readInt();
+            byte[] id1Byte = new byte[id1L];
+            buf.readBytes(id1Byte);
+
+            byte[] secret1 = RSAUtil.decrypt(capub, cas);
+
+            buf.clear().writeBytes(secret1);
+
+            byte[] rubbish = new byte[1];
+            buf.readBytes(rubbish);
+
+            int id1Lca = buf.readInt();
+            byte[] id1caByte = new byte[id1Lca];
+            buf.readBytes(id1caByte);
+
+            if (new String(id1Byte, StandardCharsets.UTF_8).compareTo(new String(id1caByte, StandardCharsets.UTF_8)) == 0) {
+                System.out.println("用户验证成功！");
+            }
+
+            int id1pubL = buf.readInt();
+            byte[] id1pubByte = new byte[id1pubL];
+            buf.readBytes(id1pubByte);
+
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(id1pubByte);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            Key id1pub = keyFactory.generatePublic(keySpec);
+
+            distpub = id1pub;
+
+            long tca = buf.readLong();
+            if (tca < System.currentTimeMillis()) {
+                System.out.println("时间戳验证成功！");
+            }
+
+            MsgProtocol msg1 = new MsgProtocol();
+            msg1.setStep(22);
+
+            buf.clear();
+
+            buf.writeInt(id1L)
+                    .writeBytes(id1Byte)
+                    .writeInt(ca.length)
+                    .writeBytes(ca)
+                    .writeInt(id2L)
+                    .writeBytes(id2Byte);
+
+            byte[] content = new byte[buf.readableBytes()];
+
+            msg1.setLength(buf.readableBytes());
+            buf.readBytes(content);
+            msg1.setContent(content);
+
+            System.out.println("a->b success");
+            ctx.channel().writeAndFlush(msg1);
+        }
+        if (msg.getStep() == 22) {
+            ByteBuf buf = Unpooled.buffer();
+            buf.writeBytes(msg.getContent());
+
+            int id1L = buf.readInt();
+            byte[] id1Byte = new byte[id1L];
+            buf.readBytes(id1Byte);
+
+            int cal = buf.readInt();
+            byte[] cas = new byte[cal];
+            buf.readBytes(cas);
+
+            int id2L = buf.readInt();
+            byte id2Byte[] = new byte[id2L];
+            buf.readBytes(id2Byte);
+
+            byte[] secret1 = RSAUtil.decrypt(capub, cas);
+
+            buf.clear().writeBytes(secret1);
+
+            byte[] rubbish = new byte[1];
+            buf.readBytes(rubbish);
+
+            int id2Lca = buf.readInt();
+            byte[] id2caByte = new byte[id2Lca];
+            buf.readBytes(id2caByte);
+
+            if (new String(id2Byte, StandardCharsets.UTF_8).compareTo(new String(id2caByte, StandardCharsets.UTF_8)) == 0) {
+                System.out.println("用户验证成功！");
+            }
+
+            int id2pubL = buf.readInt();
+            byte[] id2pubByte = new byte[id2pubL];
+            buf.readBytes(id2pubByte);
+
+            long tca = buf.readLong();
+            if (tca < System.currentTimeMillis()) {
+                System.out.println("时间戳验证成功！");
+            }
+
+            System.out.println("start send");
+
+            buf.clear();
+
+
+            FileInputStream stream = new FileInputStream(filename);
+            byte[] file = stream.readAllBytes();
+
+            byte[] md5 = MD5Util.MD5(file);
+            byte[] md5s = RSAUtil.encrypt(keyPair.getPrivate(), md5);
+
+            ByteBuf tb = Unpooled.buffer();
+
+            tb.writeInt(md5s.length)
+                    .writeBytes(md5s)
+                    .writeBytes(file);
+
+            byte[] trans = new byte[tb.readableBytes()];
+            tb.readBytes(trans);
+
+            System.out.println("origin " + trans.length);
+
+            long timestart = System.currentTimeMillis();
+            System.out.println("encrpyt start: " + timestart);
+
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(id2pubByte);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            Key id2pub = keyFactory.generatePublic(keySpec);
+            distpub = id2pub;
+
+            byte[] secret2 = RSAUtil.encrypt(id2pub, trans);
+//            byte[] secret2 = file;
+            System.out.println("secret2 " + secret2.length);
+
+
+            int j = 0;
+            int size = 32 * 1024;
+            int rest = 0;
+
+            while ((rest = (secret2.length - j * size)) > 0) {
+                MsgProtocol msg1 = new MsgProtocol();
+
+                int len = size > rest ? rest : size;
+                buf.clear();
+
+                buf.writeInt(id2L)
+                        .writeBytes(id2Byte)
+                        .writeLong(timestart)
+                        .writeInt(j)
+                        .writeInt(len);
+                byte[] temp = new byte[len];
+                for (int i = 0; i < len; i++) {
+                    temp[i] = secret2[j * size + i];
+                }
+                buf.writeBytes(temp);
+
+                byte[] content = new byte[buf.readableBytes()];
+
+                msg1.setStep(23);
+                msg1.setLength(buf.readableBytes());
+                buf.readBytes(content);
+                msg1.setContent(content);
+
+                System.out.println("length file: " + msg1.getLength());
+
+                System.out.println(j);
+                ctx.channel().writeAndFlush(msg1);
+                j++;
+            }
+        }
+        if (msg.getStep() == 23) {
+            int size = 32 * 1024;
+            ByteBuf buf = Unpooled.buffer();
+            buf.writeBytes(msg.getContent());
+
+            int id2L = buf.readInt();
+            byte id2Byte[] = new byte[id2L];
+            buf.readBytes(id2Byte);
+
+            long timestart = buf.readLong();
+
+            int j = buf.readInt();
+            int filelength = buf.readInt();
+            byte file[] = new byte[filelength];
+            buf.readBytes(file);
+            System.out.println("j: " + j);
+            System.out.println("this piece length " + filelength);
+            for (int i = 0; i < filelength; i++) {
+                filebuf[i + size * j] = file[i];
+            }
+
+            if (filelength < size) {
+                byte[] d = new byte[j * size + filelength];
+                for (int i = 0; i < d.length; i++) {
+                    d[i] = filebuf[i];
+                }
+                System.out.println("get length " + d.length);
+                byte[] secret3 = RSAUtil.decrypt(keyPair.getPrivate(), d);
+
+//                byte[] secret3 = d;
+                System.out.println("secret length " + secret3.length);
+                long timeend = System.currentTimeMillis();
+                System.out.println("start - end: " + (timeend - timestart));
+
+                ByteBuf tb = Unpooled.buffer();
+
+                tb.writeBytes(secret3);
+                int md5L = tb.readInt();
+                byte[] md5 = new byte[md5L];
+
+                tb.readBytes(md5);
+                byte[] md5d = RSAUtil.decrypt(distpub, md5);
+
+                int fileL = tb.readableBytes();
+                byte[] fileB = new byte[fileL];
+                tb.readBytes(fileB);
+                byte[] md5s = MD5Util.MD5(fileB);
+                boolean flag = true;
+                System.out.println("MD5 confirming");
+                for (int i = 0; i < md5s.length; i++) {
+                    if (md5s[i] != md5d[i]) {
+                        System.out.print(md5s[i] + " ");
+                        flag = false;
                     }
                 }
+                if (flag) {
+                    System.out.println("md5 check!");
+                }
+
+                FileOutputStream stream = new FileOutputStream("1.bmp");
+                stream.write(fileB);
+                stream.close();
+            }
+        }
+
+        if (msg.getStep() == 31) {
+            ByteBuf buf = Unpooled.buffer();
+            buf.writeBytes(msg.getContent());
+
+            int id2L = buf.readInt();
+            byte id2Byte[] = new byte[id2L];
+            buf.readBytes(id2Byte);
+
+            int cal = buf.readInt();
+            byte[] cas = new byte[cal];
+            buf.readBytes(cas);
+
+            int id1L = buf.readInt();
+            byte[] id1Byte = new byte[id1L];
+            buf.readBytes(id1Byte);
+
+            byte[] secret1 = RSAUtil.decrypt(capub, cas);
+
+            buf.clear().writeBytes(secret1);
+
+            byte[] rubbish = new byte[1];
+            buf.readBytes(rubbish);
+
+            int id1Lca = buf.readInt();
+            byte[] id1caByte = new byte[id1Lca];
+            buf.readBytes(id1caByte);
+
+            if (new String(id1Byte, StandardCharsets.UTF_8).compareTo(new String(id1caByte, StandardCharsets.UTF_8)) == 0) {
+                System.out.println("用户验证成功！");
+            }
+
+            int id1pubL = buf.readInt();
+            byte[] id1pubByte = new byte[id1pubL];
+            buf.readBytes(id1pubByte);
+
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(id1pubByte);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            Key id1pub = keyFactory.generatePublic(keySpec);
+
+            distpub = id1pub;
+
+            long tca = buf.readLong();
+            if (tca < System.currentTimeMillis()) {
+                System.out.println("时间戳验证成功！");
+            }
+
+            MsgProtocol msg1 = new MsgProtocol();
+            msg1.setStep(22);
+
+            buf.clear();
+
+            buf.writeInt(id1L)
+                    .writeBytes(id1Byte)
+                    .writeInt(ca.length)
+                    .writeBytes(ca)
+                    .writeInt(id2L)
+                    .writeBytes(id2Byte);
+
+            byte[] content = new byte[buf.readableBytes()];
+
+            msg1.setLength(buf.readableBytes());
+            buf.readBytes(content);
+            msg1.setContent(content);
+
+            System.out.println("a->b success");
+            ctx.channel().writeAndFlush(msg1);
+        }
+        if (msg.getStep() == 32) {
+            ByteBuf buf = Unpooled.buffer();
+            buf.writeBytes(msg.getContent());
+
+            int id1L = buf.readInt();
+            byte[] id1Byte = new byte[id1L];
+            buf.readBytes(id1Byte);
+
+            int cal = buf.readInt();
+            byte[] cas = new byte[cal];
+            buf.readBytes(cas);
+
+            int id2L = buf.readInt();
+            byte id2Byte[] = new byte[id2L];
+            buf.readBytes(id2Byte);
+
+            byte[] secret1 = RSAUtil.decrypt(capub, cas);
+
+            buf.clear().writeBytes(secret1);
+
+            byte[] rubbish = new byte[1];
+            buf.readBytes(rubbish);
+
+            int id2Lca = buf.readInt();
+            byte[] id2caByte = new byte[id2Lca];
+            buf.readBytes(id2caByte);
+
+            if (new String(id2Byte, StandardCharsets.UTF_8).compareTo(new String(id2caByte, StandardCharsets.UTF_8)) == 0) {
+                System.out.println("用户验证成功！");
+            }
+
+            int id2pubL = buf.readInt();
+            byte[] id2pubByte = new byte[id2pubL];
+            buf.readBytes(id2pubByte);
+
+            long tca = buf.readLong();
+            if (tca < System.currentTimeMillis()) {
+                System.out.println("时间戳验证成功！");
+            }
+
+            System.out.println("start send");
+
+            buf.clear();
+
+
+            FileInputStream stream = new FileInputStream(filename);
+            byte[] file = stream.readAllBytes();
+
+//            byte[] md5 = MD5Util.MD5(file);
+//            byte[] md5s = RSAUtil.encrypt(keyPair.getPrivate(), md5);
+//
+//            ByteBuf tb = Unpooled.buffer();
+//
+//            tb.writeInt(md5s.length)
+//                    .writeBytes(md5s)
+//                    .writeBytes(file);
+
+//            byte[] trans = new byte[tb.readableBytes()];
+//            tb.readBytes(trans);
+
+            System.out.println("origin " + file.length);
+
+            long timestart = System.currentTimeMillis();
+            System.out.println("encrpyt start: " + timestart);
+
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(id2pubByte);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            Key id2pub = keyFactory.generatePublic(keySpec);
+            distpub = id2pub;
+
+            byte[] secret2 = RSAUtil.encrypt(id2pub, file);
+//            byte[] secret2 = file;
+            System.out.println("secret2 " + secret2.length);
+            ByteBuf tb = Unpooled.buffer();
+
+            byte[] md5 = MD5Util.MD5(secret2);
+            tb.writeInt(md5.length)
+                    .writeBytes(md5)
+                    .writeBytes(secret2);
+
+            byte[] trans = new byte[tb.readableBytes()];
+            tb.readBytes(trans);
+
+            secret2 = trans;
+
+            int j = 0;
+            int size = 32 * 1024;
+            int rest = 0;
+
+            while ((rest = (secret2.length - j * size)) > 0) {
+                MsgProtocol msg1 = new MsgProtocol();
+
+                int len = size > rest ? rest : size;
+                buf.clear();
+
+                buf.writeInt(id2L)
+                        .writeBytes(id2Byte)
+                        .writeLong(timestart)
+                        .writeInt(j)
+                        .writeInt(len);
+                byte[] temp = new byte[len];
+                for (int i = 0; i < len; i++) {
+                    temp[i] = secret2[j * size + i];
+                }
+                buf.writeBytes(temp);
+
+                byte[] content = new byte[buf.readableBytes()];
+
+                msg1.setStep(23);
+                msg1.setLength(buf.readableBytes());
+                buf.readBytes(content);
+                msg1.setContent(content);
+
+                System.out.println("length file: " + msg1.getLength());
+
+                System.out.println(j);
+                ctx.channel().writeAndFlush(msg1);
+                j++;
+            }
+        }
+        if (msg.getStep() == 33) {
+            int size = 32 * 1024;
+            ByteBuf buf = Unpooled.buffer();
+            buf.writeBytes(msg.getContent());
+
+            int id2L = buf.readInt();
+            byte id2Byte[] = new byte[id2L];
+            buf.readBytes(id2Byte);
+
+            long timestart = buf.readLong();
+
+            int j = buf.readInt();
+            int filelength = buf.readInt();
+            byte file[] = new byte[filelength];
+            buf.readBytes(file);
+            System.out.println("j: " + j);
+            System.out.println("this piece length " + filelength);
+            for (int i = 0; i < filelength; i++) {
+                filebuf[i + size * j] = file[i];
+            }
+
+            if (filelength < size) {
+                byte[] d = new byte[j * size + filelength];
+                for (int i = 0; i < d.length; i++) {
+                    d[i] = filebuf[i];
+                }
+
+                ByteBuf tb = Unpooled.buffer();
+                tb.writeBytes(d);
+
+                int lenM = tb.readInt();
+                byte[] md5d = new byte[lenM];
+                tb.readBytes(md5d);
+
+                System.out.println("get length " + d.length);
+
+                byte[] content= new byte[tb.readableBytes()];
+                tb.writeBytes(content);
+
+                byte[] md5s = MD5Util.MD5(content);
+                byte[] secret3 = RSAUtil.decrypt(keyPair.getPrivate(), content);
+
+//                byte[] secret3 = d;
+                System.out.println("secret length " + secret3.length);
+                long timeend = System.currentTimeMillis();
+                System.out.println("start - end: " + (timeend - timestart));
+
+
+                boolean flag = true;
+                System.out.println("MD5 confirming");
+                for (int i = 0; i < md5s.length; i++) {
+                    if (md5s[i] != md5d[i]) {
+                        System.out.print(md5s[i] + " ");
+                        flag = false;
+                    }
+                }
+                if (flag) {
+                    System.out.println("md5 check!");
+                }
+
+                FileOutputStream stream = new FileOutputStream("1.bmp");
                 stream.write(secret3);
                 stream.close();
             }
